@@ -1,10 +1,9 @@
-const { db } = require("../config/mysql");
 const randomString = require('randomstring');
 const { UserModel } = require("../models/user");
 const bcryptjs = require("bcryptjs");
 const { transport } = require("../config/mailer");
 const { validateData } = require("../validation/register");
-const { respJson, error } = require("../helpers/helpers");
+const { respJson, error, sqlQuery } = require("../helpers/helpers");
 
 //register user
 exports.register = async (httpReq, httpResp) => {
@@ -20,12 +19,12 @@ exports.register = async (httpReq, httpResp) => {
     validateData(newUser, httpResp)
     //query is email exist 
     try {
-        let res = await db.query(` SELECT * FROM USERS WHERE email=${newUser.email}`)
+        let res = await sqlQuery(` SELECT * FROM USERS WHERE email='${newUser.email}'`)
         //if email exist 
         if (res.length > 0 && res[0].isVerified == 1)
-            respJson(403, "User Already exist ")
+            respJson(403, "User Already exist ",httpResp)
         else if (res.length > 0)
-            respJson(403, "Please Verify your account ")
+            respJson(403, "Please Verify your account ",httpResp)
 
         else {
 
@@ -37,7 +36,7 @@ exports.register = async (httpReq, httpResp) => {
             //crypt the password 
             newUser.password = await bcryptjs.hash(newUser.password, 10)
             //insert the newUser into database
-            let newUser = await db.query(` INSERT INTO USERS SET ? `, newUser)
+            let newUser = await sqlQuery(` INSERT INTO USERS SET ? `, newUser)
 
             //send mail to newUser's email account 
             //mail options
@@ -49,13 +48,10 @@ exports.register = async (httpReq, httpResp) => {
             }
             let info = await transport.sendMail(mailOptions)
             console.log(info);
-            respJson(201, "Please verify Your Email !!")
-
+            respJson(201, "Please verify Your Email !!",httpResp)
         }
-
-
     } catch (error) {
-        respJson(500, error.message)
+        respJson(500, error.message,httpResp)
     }
 }
 
@@ -67,7 +63,7 @@ exports.verifyEmail = async (httpReq, httpResp) => {
     //validate email and token 
 
     try {
-        let res = await db.query(`SELECT * FROM USERS WHERE email='${email}' AND token='${token}'`)
+        let res = await sqlQuery(`SELECT * FROM USERS WHERE email='${email}' AND token='${token}'`)
         if (res.length == 0) httpResp.send(error("invalid email or token "))
         else {
             //verify expiration date 
@@ -76,7 +72,7 @@ exports.verifyEmail = async (httpReq, httpResp) => {
             if (expirationDate < currentDate)
                 httpResp.send(error("token has been expired"))
             else {
-                let userUpdated = await db.query(`UPDATE USERS SET token='',isVerified=1 WHERE email=${email}`)
+                let userUpdated = await sqlQuery(`UPDATE USERS SET token='',isVerified=1 WHERE email='${email}'`)
                 console.log(userUpdated);
                 httpResp.
                     send(`<h1>Your Account has been verified successfully </h1>
@@ -85,7 +81,7 @@ exports.verifyEmail = async (httpReq, httpResp) => {
         }
 
     } catch (error) {
-        respJson(500,error.message)
+        respJson(500,error.message,httpResp)
     }
     
 }

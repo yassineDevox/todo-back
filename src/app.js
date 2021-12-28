@@ -27,6 +27,8 @@ app.listen('9000', () => {
 })
 
 //user api register
-app.post(`/${API_URL.user}/register`, register)
+app.post(`/${API_URL.auth}/register`, register)
 //verify email after register
 app.post(`/${API_URL.auth}/verify-email`, verifyEmail)
+//login
+app.post(`/${API_URL.auth}/login`,login)
