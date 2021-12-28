@@ -1,10 +1,9 @@
 const express = require("express")
-const { register } = require("./api/user")
 const { API_URL } = require("./config/api")
 const { db } = require("./config/mysql")
 const cors = require("cors")
 const bp = require("body-parser")
-const { verifyEmail } = require("./api/auth")
+const { verifyEmail,register } = require("./api/auth")
 
 
 //Connect
@@ -30,4 +29,4 @@ app.listen('9000', () => {
 //user api register
 app.post(`/${API_URL.user}/register`, register)
 //verify email after register
-app.post(`/${API_URL.user}/verify-email`, verifyEmail)
+app.post(`/${API_URL.auth}/verify-email`, verifyEmail)
