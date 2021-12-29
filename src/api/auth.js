@@ -4,6 +4,8 @@ const bcryptjs = require("bcryptjs");
 const { transport } = require("../config/mailer");
 const { validateData } = require("../validation/register");
 const { respJson, error, sqlQuery } = require("../helpers/helpers");
+const { Credentials } = require('../models/credential');
+const { validateDataLogin } = require('../validation/login');
 
 //register user
 exports.register = async (httpReq, httpResp) => {
@@ -22,9 +24,9 @@ exports.register = async (httpReq, httpResp) => {
         let res = await sqlQuery(` SELECT * FROM USERS WHERE email='${newUser.email}'`)
         //if email exist 
         if (res.length > 0 && res[0].isVerified == 1)
-            respJson(403, "User Already exist ",httpResp)
+            respJson(403, "User Already exist ", httpResp)
         else if (res.length > 0)
-            respJson(403, "Please Verify your account ",httpResp)
+            respJson(403, "Please Verify your account ", httpResp)
 
         else {
 
@@ -48,16 +50,16 @@ exports.register = async (httpReq, httpResp) => {
             }
             let info = await transport.sendMail(mailOptions)
             console.log(info);
-            respJson(201, "Please verify Your Email !!",httpResp)
+            respJson(201, "Please verify Your Email !!", httpResp)
         }
     } catch (error) {
-        respJson(500, error.message,httpResp)
+        respJson(500, error.message, httpResp)
     }
 }
 
-
+//verify email after register
 exports.verifyEmail = async (httpReq, httpResp) => {
-    
+
     //fetch data 
     let { email, token } = httpReq.params
     //validate email and token 
@@ -81,10 +83,36 @@ exports.verifyEmail = async (httpReq, httpResp) => {
         }
 
     } catch (error) {
-        respJson(500,error.message,httpResp)
+        respJson(500, error.message, httpResp)
     }
-    
+
 }
 
+//login after verifying email 
+exports.login = async (httpReq, httpResp) => {
 
+    //fetch data
+    let { email, password } = httpReq.body
+    let credential = new Credentials(email, password)
+    //validation
+    validateDataLogin(credential, httpResp)
+    try {
+        
+        //query by email 
+        let res = await sqlQuery(` SELECT * FROM USERS WHERE email='${newUser.email}'`)
+        if(res.length==0)
+            respJson(404,"Email not found ",httpResp)
+        else 
+            let userExists = await bcryptjs.compare(res[0].password,password)
+            if(!userExists)
+                respJson(403,"Password Invalid",httpResp)
+            else 
+                respJson(200,res[0],httpResp)
+
+    } catch (error) {
+        respJson(500, error.message, httpResp)
+
+    }
+
+}
 
