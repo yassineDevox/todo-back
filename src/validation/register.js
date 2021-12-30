@@ -16,7 +16,7 @@ exports.validateData = (data,httpResp) => {
     let emailPattern = /^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$/
 
     if (!emailPattern.test(data.email))
-        respJson(403, "email Should be at least 4 characters & maximum 30 😅",httpResp)
+        respJson(403, "email Should be valid 😅",httpResp)
 
     //password
 

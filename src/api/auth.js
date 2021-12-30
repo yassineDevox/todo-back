@@ -6,6 +6,7 @@ const { validateData } = require("../validation/register");
 const { respJson, error, sqlQuery } = require("../helpers/helpers");
 const { Credentials } = require('../models/credential');
 const { validateDataLogin } = require('../validation/login');
+const { validateDataFP } = require('../validation/forget-pass');
 
 //register user
 exports.register = async (httpReq, httpResp) => {
@@ -97,17 +98,17 @@ exports.login = async (httpReq, httpResp) => {
     //validation
     validateDataLogin(credential, httpResp)
     try {
-        
+
         //query by email 
         let res = await sqlQuery(` SELECT * FROM USERS WHERE email='${newUser.email}'`)
-        if(res.length==0)
-            respJson(404,"Email not found ",httpResp)
-        else 
-            let userExists = await bcryptjs.compare(res[0].password,password)
-            if(!userExists)
-                respJson(403,"Password Invalid",httpResp)
-            else 
-                respJson(200,res[0],httpResp)
+        if (res.length == 0)
+            respJson(404, "Email not found ", httpResp)
+        else
+            let userExists = await bcryptjs.compare(res[0].password, password)
+        if (!userExists)
+            respJson(403, "Password Invalid", httpResp)
+        else
+            respJson(200, res[0], httpResp)
 
     } catch (error) {
         respJson(500, error.message, httpResp)
@@ -115,4 +116,67 @@ exports.login = async (httpReq, httpResp) => {
     }
 
 }
+
+//forget password 
+exports.forgetPassword = async (httpReq, httpResp) => {
+
+    //fetch data 
+    let { email } = httpReq.body
+
+    //validate data 
+    validateDataFP({ email }, httpResp)
+
+    //test if the email exist 
+    try {
+        let res = await sqlQuery(` SELECT * FROM USERS 
+                                   WHERE email='${newUser.email}'
+                                `)
+        if (res.length == 0)
+            respJson(404, "Email not found ", httpResp)
+        else if (res[0].isVerified == 0)
+            respJson(403, "Please verify Your Email !! ", httpResp)
+        else {
+            //generate token 
+            let token = randomString.generate()
+            let expirationDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
+            //update token and expiration date 
+            let updated = await sqlQuery(` 
+                    UPDATE USERS SET 
+                    email_token='${token}',
+                    expirationDate=${expirationDate}
+                     `)
+            console.log(updated);
+            //send mail to newUser's email account 
+            //mail options
+            const mailOptions = {
+                from: "todoApp@GMC.com",
+                to: email,
+                subject: "confirm reset password ",
+                html: `
+                <a href="http://localhost:3000/reset-pass/${email}/code/${token}">Click Here to reset your password</a>`
+            }
+            let info = await transport.sendMail(mailOptions)
+            console.log(info);
+            respJson(201, "Please Check Your Email !!", httpResp)
+        }
+
+    } catch (error) {
+        respJson(500, error.message, httpResp)
+    }
+}
+
+
+
+
+
+
+
+
+
+//resend 
+exports.resend = async () => { }
+
+
+//reset password 
+exports.resetPassword = async () => { }
 
