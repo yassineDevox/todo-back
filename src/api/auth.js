@@ -174,9 +174,52 @@ exports.forgetPassword = async (httpReq, httpResp) => {
 
 
 //resend 
-exports.resend = async () => { }
+exports.resend = async (httpReq, httpResp) => { 
+
+    //fetch data 
+    let { email } = httpReq.body
+
+    //validate data 
+    validateDataFP({ email }, httpResp)
+
+    //test if the email exist 
+    try {
+        let res = await sqlQuery(` SELECT * FROM USERS 
+                                   WHERE email='${email}'
+                                `)
+        if (res.length == 0)
+            respJson(404, "Email not found ", httpResp)
+        else {
+            //regenerate token 
+            let token = randomString.generate()
+            let expirationDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
+            //update token and expiration date 
+            let updated = await sqlQuery(` 
+                    UPDATE USERS SET 
+                    email_token='${token}',
+                    expirationDate=${expirationDate}
+                     `)
+            console.log(updated);
+            //send mail to newUser's email account 
+            //mail options
+            const mailOptions = {
+                from: "todoApp@GMC.com",
+                to: email,
+                subject: "confirm reset password ",
+                html: `
+                <a href="http://localhost:3000/reset-pass/${email}/code/${token}">Click Here to reset your password</a>`
+            }
+            let info = await transport.sendMail(mailOptions)
+            console.log(info);
+            respJson(201, "Please Check Your Email !!", httpResp)
+        }
+
+    } catch (error) {
+        respJson(500, error.message, httpResp)
+    }
+}
 
 
 //reset password 
-exports.resetPassword = async () => { }
+exports.resetPassword = async (httpReq, httpResp) => { }
 

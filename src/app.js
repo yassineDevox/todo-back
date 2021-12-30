@@ -6,7 +6,8 @@ const bp = require("body-parser")
 const { verifyEmail,
         register,
         login,
-        forgetPassword } = require("./api/auth")
+        forgetPassword, 
+        resend} = require("./api/auth")
 
 
 //Connect
@@ -42,7 +43,7 @@ app.post(`/${API_URL.auth}/login`, login)
 app.post(`/${API_URL.auth}/forget-pass`, forgetPassword)
 
 //resend  
-app.post(`/${API_URL.auth}/forget-pass`, resend)
+app.post(`/${API_URL.auth}/resend-email`, resend)
 
 //reset password 
 app.post(`/${API_URL.auth}/forget-pass`, resetPassword)
