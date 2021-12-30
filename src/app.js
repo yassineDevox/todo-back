@@ -7,7 +7,8 @@ const { verifyEmail,
         register,
         login,
         forgetPassword, 
-        resend} = require("./api/auth")
+        resend
+    } = require("./api/auth")
 
 
 //Connect
@@ -47,3 +48,5 @@ app.post(`/${API_URL.auth}/resend-email`, resend)
 
 //reset password 
 app.post(`/${API_URL.auth}/forget-pass`, resetPassword)
+
+

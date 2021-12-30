@@ -66,7 +66,7 @@ exports.verifyEmail = async (httpReq, httpResp) => {
     //validate email and token 
 
     try {
-        let res = await sqlQuery(`SELECT * FROM USERS WHERE email='${email}' AND token='${token}'`)
+        let res = await sqlQuery(`SELECT * FROM USERS WHERE email='${email}' AND email_token='${token}'`)
         if (res.length == 0) httpResp.send(error("invalid email or token "))
         else {
             //verify expiration date 
@@ -174,7 +174,7 @@ exports.forgetPassword = async (httpReq, httpResp) => {
 
 
 //resend 
-exports.resend = async (httpReq, httpResp) => { 
+exports.resend = async (httpReq, httpResp) => {
 
     //fetch data 
     let { email } = httpReq.body
@@ -221,5 +221,36 @@ exports.resend = async (httpReq, httpResp) => {
 
 
 //reset password 
-exports.resetPassword = async (httpReq, httpResp) => { }
+exports.resetPassword = async (httpReq, httpResp) => {
+
+
+    //fetch data 
+    let { email, token } = httpReq.params
+    let { newPassword } = httpReq.body
+    //validate email and token 
+
+    try {
+        let res = await sqlQuery(`SELECT * FROM USERS WHERE email='${email}' AND email_token='${token}'`)
+        if (res.length == 0) httpResp.send(error("invalid email or token "))
+        else {
+            //verify expiration date 
+            let expirationDate = res[0].expirationDate
+            let currentDate = Date.now()
+            if (expirationDate < currentDate)
+                httpResp.send(error("token has been expired"))
+            else {
+                //crypt the password 
+                let newPassword = await bcryptjs.hash(newPassword, 10)
+                let updated = await sqlQuery(` 
+                    UPDATE USERS SET 
+                    expirationDate=${expirationDate}
+                     `)
+            }
+        }
+
+    } catch (error) {
+        respJson(500, error.message, httpResp)
+    }
+
+}
 
