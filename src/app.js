@@ -5,9 +5,6 @@ const cors = require("cors")
 const bp = require("body-parser")
 const { verifyEmail,
         register,
-        login,
-        forgetPassword, 
-        resend
     } = require("./api/auth")
 
 
@@ -36,17 +33,4 @@ app.post(`/${API_URL.auth}/register`, register)
 
 //verify email after register
 app.post(`/${API_URL.auth}/verify-email`, verifyEmail)
-
-//login
-app.post(`/${API_URL.auth}/login`, login)
-
-//forget password 
-app.post(`/${API_URL.auth}/forget-pass`, forgetPassword)
-
-//resend  
-app.post(`/${API_URL.auth}/resend-email`, resend)
-
-//reset password 
-app.post(`/${API_URL.auth}/forget-pass`, resetPassword)
-
 

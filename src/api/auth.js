@@ -2,11 +2,8 @@ const randomString = require('randomstring');
 const { UserModel } = require("../models/user");
 const bcryptjs = require("bcryptjs");
 const { transport } = require("../config/mailer");
-const { validateData } = require("../validation/register");
+const { validateData, validateDataRegister } = require("../validation/register");
 const { respJson, error, sqlQuery } = require("../helpers/helpers");
-const { Credentials } = require('../models/credential');
-const { validateDataLogin } = require('../validation/login');
-const { validateDataFP } = require('../validation/forget-pass');
 
 //register user
 exports.register = async (httpReq, httpResp) => {
@@ -19,13 +16,19 @@ exports.register = async (httpReq, httpResp) => {
         httpReq.body.password
     )
     //validate data 
-    validateData(newUser, httpResp)
+    let errorMSG = validateDataRegister(newUser)
+    if(errorMSG != ""){
+        console.log(errorMSG);
+        respJson(403,errorMSG,httpResp)
+        return 
+    }
     //query is email exist 
     try {
         let res = await sqlQuery(` SELECT * FROM USERS WHERE email='${newUser.email}'`)
         //if email exist 
         if (res.length > 0 && res[0].isVerified == 1)
             respJson(403, "User Already exist ", httpResp)
+            
         else if (res.length > 0)
             respJson(403, "Please Verify your account ", httpResp)
 
@@ -64,7 +67,6 @@ exports.verifyEmail = async (httpReq, httpResp) => {
     //fetch data 
     let { email, token } = httpReq.params
     //validate email and token 
-
     try {
         let res = await sqlQuery(`SELECT * FROM USERS WHERE email='${email}' AND email_token='${token}'`)
         if (res.length == 0) httpResp.send(error("invalid email or token "))
